@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>可愛貓咪炸彈超人 3D | Cat Bomber 3D</title>
+    <!-- 引入 Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Varela+Round&display=swap');
+
+        :root {
+            --bg-color: #87CEEB;
+            --ui-bg: #81C784;
+            --text-color: #1B5E20;
+            --accent: #FF7043;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Varela Round', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        h1 {
+            position: absolute;
+            top: 10px;
+            z-index: 5;
+            font-family: 'Fredoka One', cursive;
+            color: #FFF;
+            text-shadow: 2px 2px 0px #388E3C, 4px 4px 0px rgba(0,0,0,0.2);
+            margin: 0;
+            font-size: 2.5rem;
+            pointer-events: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #87CEEB;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 20px;
+            box-sizing: border-box;
+            font-weight: bold;
+            font-size: 1.3rem;
+            z-index: 10;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+            border: 3px solid #81C784;
+        }
+
+        .hud-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(135, 206, 235, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            backdrop-filter: blur(5px);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        button {
+            background: #66BB6A;
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 1.8rem;
+            font-family: 'Fredoka One', cursive;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #2E7D32;
+            transition: transform 0.1s, box-shadow 0.1s;
+            margin-top: 25px;
+            pointer-events: auto;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #2E7D32;
+        }
+
+        button:hover {
+            filter: brightness(1.1);
+        }
+
+        .msg-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            color: #1B5E20;
+            text-shadow: 2px 2px 0px #81C784;
+        }
+
+        .msg-sub {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: #33691E;
+            font-weight: bold;
+        }
+
+        .instructions {
+            margin-top: 30px;
+            background: white;
+            padding: 20px 30px;
+            border-radius: 20px;
+            text-align: left;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border: 2px solid #A5D6A7;
+        }
+        
+        .key {
+            display: inline-block;
+            background: #f1f8e9;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border-bottom: 3px solid #c5e1a5;
+            color: #33691E;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        #vol-control {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #558B2F;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🌲 Forest Cat Bomber 🌲</h1>
+
+    <div id="game-container">
+        <div id="ui-layer">
+            <div class="hud-item">
+                <span>💣</span> <span id="hud-bomb">1</span>
+            </div>
+            <div class="hud-item">
+                <span>🔥</span> <span id="hud-power">1</span>
+            </div>
+            <div class="hud-item">
+                <span>👟</span> <span id="hud-speed">1</span>
+            </div>
+            <div class="hud-item" style="color: #E53935;">
+                <span>👾</span> <span id="hud-enemies">0</span>
+            </div>
+        </div>
+        
+        <!-- Three.js Canvas 會自動插入這裡 -->
+
+        <div id="overlay">
+            <div class="msg-title" id="overlay-title">Cat Bomber 3D</div>
+            <div class="msg-sub" id="overlay-sub">Adventure in the Big Forest!</div>
+            <button id="start-btn">START GAME</button>
+            <div id="vol-control">🔊 Sound On</div>
+            
+            <div class="instructions">
+                <p><span class="key">↑</span> <span class="key">↓</span> <span class="key">←</span> <span class="key">→</span> 移動 Move</p>
+                <p><span class="key">SPACE</span> 放炸彈 Bomb</p>
+                <p>目標：炸開樹木，找到出口 🚪</p>
+            </div>
+        </div>
+    </div>
+
+<script>
+/**
+ * Cat Bomber 3D - Enhanced Forest Edition
+ */
+
+// --- 遊戲邏輯常數 ---
+const TILE_SIZE = 40; 
+// 擴大地图尺寸
+const COLS = 19; 
+const ROWS = 15;
+
+// --- 3D 渲染常數 ---
+const UNIT_SIZE = 4;
+const MAP_OFFSET_X = -(COLS * UNIT_SIZE) / 2;
+const MAP_OFFSET_Z = -(ROWS * UNIT_SIZE) / 2;
+
+// --- 實體類型 ---
+const TYPES = {
+    FLOOR: 0,
+    WALL_HARD: 1, // 石頭 (低矮)
+    WALL_SOFT: 2, // 樹木 (高大)
+    BOMB: 3,
+    EXIT: 9,
+};
+
+// --- UI 元素 ---
+const hudBomb = document.getElementById('hud-bomb');
+const hudPower = document.getElementById('hud-power');
+const hudSpeed = document.getElementById('hud-speed');
+const hudEnemies = document.getElementById('hud-enemies');
+const overlay = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlay-title');
+const overlaySub = document.getElementById('overlay-sub');
+const startBtn = document.getElementById('start-btn');
+const volControl = document.getElementById('vol-control');
+const gameContainer = document.getElementById('game-container');
+
+// --- 音效與音樂系統 ---
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = new AudioCtx();
+let bgmOscillators = [];
+let bgmInterval = null;
+let soundEnabled = true;
+
+// 簡單的合成器 BGM 序列 (C大調快樂風格)
+const melody = [
+    {f: 523.25, d: 0.2}, {f: 0, d: 0.1}, {f: 523.25, d: 0.2}, {f: 659.25, d: 0.2}, // C C E
+    {f: 783.99, d: 0.4}, {f: 0, d: 0.1}, {f: 783.99, d: 0.2}, {f: 880.00, d: 0.2}, // G G A
+    {f: 783.99, d: 0.2}, {f: 659.25, d: 0.2}, {f: 587.33, d: 0.2}, {f: 659.25, d: 0.2}, // G E D E
+    {f: 523.25, d: 0.6}, {f: 0, d: 0.4} // C
+];
+let noteIndex = 0;
+
+function playBGM() {
+    if (!soundEnabled) return;
+    if (bgmInterval) clearInterval(bgmInterval);
+    
+    noteIndex = 0;
+    const playNextNote = () => {
+        if (!gameRunning) {
+            clearInterval(bgmInterval);
+            return;
+        }
+        
+        let note = melody[noteIndex % melody.length];
+        if (note.f > 0) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle'; // 柔和的波形
+            osc.frequency.value = note.f;
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime); // 音量很小當背景
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + note.d);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + note.d);
+        }
+        
+        noteIndex++;
+    };
+    
+    // 每 250ms 播放一個音符單元
+    bgmInterval = setInterval(playNextNote, 250);
+}
+
+const playSound = (type) => {
+    if (!soundEnabled || audioCtx.state === 'suspended') {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        if(!soundEnabled) return;
+    }
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+
+    if (type === 'plant') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
+        gainNode.gain.setValueAtTime(0.4, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now); osc.stop(now + 0.1);
+    } else if (type === 'explode') {
+        osc.type = 'lowpass'; // 模擬爆炸低頻
+        // 這裡用鋸齒波模擬噪音
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(80, now);
+        osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
+        gainNode.gain.setValueAtTime(0.5, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        osc.start(now); osc.stop(now + 0.5);
+    } else if (type === 'item') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.setValueAtTime(1200, now + 0.1);
+        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now); osc.stop(now + 0.3);
+    } else if (type === 'win') {
+        osc.type = 'triangle'; gainNode.gain.value = 0.3;
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.frequency.value = freq;
+            g.gain.setValueAtTime(0.2, now + i*0.15);
+            g.gain.exponentialRampToValueAtTime(0.01, now + i*0.15 + 0.5);
+            o.start(now + i*0.15); o.stop(now + i*0.15 + 0.5);
+        });
+    } else if (type === 'die') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.linearRampToValueAtTime(50, now + 0.6);
+        gainNode.gain.setValueAtTime(0.4, now);
+        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.6);
+        osc.start(now); osc.stop(now + 0.6);
+    }
+};
+
+volControl.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    volControl.textContent = soundEnabled ? "🔊 Sound On" : "🔇 Sound Off";
+    if(!soundEnabled && bgmInterval) clearInterval(bgmInterval);
+    if(soundEnabled && gameRunning) playBGM();
+});
+
+// --- Three.js Setup ---
+let scene, camera, renderer;
+let meshes = {
+    walls: [], 
+    player: null,
+    enemies: new Map(),
+    bombs: new Map(),
+    items: new Map(),
+    explosions: [],
+    particles: []
+};
+
+function initThree() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB);
+    
+    // 霧氣設定：讓遠處稍微模糊，但近處清晰
+    scene.fog = new THREE.Fog(0x87CEEB, 60, 120);
+
+    // 相機設定
+    // 雖然這裡初始化了，但我們會在 animate 中動態控制它
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 50, 40); 
+    camera.lookAt(0, 0, 0);
+
+    // 燈光
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    dirLight.position.set(30, 60, 20);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    // 擴大陰影範圍以適應大地圖
+    dirLight.shadow.camera.left = -60;
+    dirLight.shadow.camera.right = 60;
+    dirLight.shadow.camera.top = 60;
+    dirLight.shadow.camera.bottom = -60;
+    scene.add(dirLight);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    gameContainer.appendChild(renderer.domElement);
+
+    createFloor();
+    
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+}
+
+function createFloor() {
+    // 地板
+    const geometry = new THREE.PlaneGeometry(COLS * UNIT_SIZE + 20, ROWS * UNIT_SIZE + 20); // 稍微大一點
+    const material = new THREE.MeshStandardMaterial({ 
+        color: 0xAED581, 
+        roughness: 0.9
+    });
+    const floor = new THREE.Mesh(geometry, material);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, -0.05, 0);
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // 泥土基座
+    const baseGeo = new THREE.BoxGeometry(COLS * UNIT_SIZE + 20, 10, ROWS * UNIT_SIZE + 20);
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0x5D4037 });
+    const base = new THREE.Mesh(baseGeo, baseMat);
+    base.position.y = -5.1;
+    base.receiveShadow = true;
+    scene.add(base);
+}
+
+// 材質定義
+const matStone = new THREE.MeshStandardMaterial({ color: 0x607D8B, roughness: 0.8 }); // 深灰
+const matStoneDetail = new THREE.MeshStandardMaterial({ color: 0x455A64, roughness: 0.9 });
+const matTreeTrunk = new THREE.MeshStandardMaterial({ color: 0x795548 }); // 樹幹棕
+const matTreeLeaves = new THREE.MeshStandardMaterial({ color: 0x43A047, roughness: 0.8 }); // 樹葉深綠
+
+const matPlayer = new THREE.MeshStandardMaterial({ color: 0xFFAB91 });
+const matPlayerFace = new THREE.MeshStandardMaterial({ color: 0xFFCCBC });
+const matBomb = new THREE.MeshStandardMaterial({ color: 0x212121, roughness: 0.2 });
+const matExplosionCore = new THREE.MeshBasicMaterial({ color: 0xFF5722 });
+const matExplosionOuter = new THREE.MeshBasicMaterial({ color: 0xFFEB3B, transparent: true, opacity: 0.8 });
+
+// --- 輔助：座標轉換 ---
+function logicToWorld(lx, ly) {
+    const wx = (lx / TILE_SIZE) * UNIT_SIZE + MAP_OFFSET_X + UNIT_SIZE / 2;
+    const wz = (ly / TILE_SIZE) * UNIT_SIZE + MAP_OFFSET_Z + UNIT_SIZE / 2;
+    return { x: wx, z: wz };
+}
+
+// --- 3D 物件建立函式 ---
+
+function createWallMesh(r, c, type) {
+    const group = new THREE.Group();
+    const wPos = logicToWorld(c * TILE_SIZE, r * TILE_SIZE);
+    group.position.set(wPos.x, 0, wPos.z);
+
+    if (type === TYPES.WALL_HARD) {
+        // --- 硬牆：扁平的大岩石 ---
+        // 為了區別，石頭做成低矮的方塊或多面體
+        const geo = new THREE.DodecahedronGeometry(UNIT_SIZE * 0.45);
+        const rock = new THREE.Mesh(geo, matStone);
+        rock.scale.set(1.2, 0.7, 1.2); // 壓扁
+        rock.position.y = UNIT_SIZE * 0.3;
+        rock.rotation.set(Math.random(), Math.random(), Math.random());
+        rock.castShadow = true;
+        rock.receiveShadow = true;
+        group.add(rock);
+
+    } else {
+        // --- 軟牆：松樹 (Cone形狀) ---
+        // 樹幹
+        const trunkGeo = new THREE.CylinderGeometry(0.3, 0.4, 1.2, 8);
+        const trunk = new THREE.Mesh(trunkGeo, matTreeTrunk);
+        trunk.position.y = 0.6;
+        trunk.castShadow = true;
+        trunk.receiveShadow = true;
+        group.add(trunk);
+
+        // 樹葉 (三層圓錐，像聖誕樹)
+        const coneGeo = new THREE.ConeGeometry(1.6, 2, 8);
+        const leaves1 = new THREE.Mesh(coneGeo, matTreeLeaves);
+        leaves1.position.y = 1.8;
+        leaves1.castShadow = true;
+        group.add(leaves1);
+
+        const coneGeo2 = new THREE.ConeGeometry(1.2, 1.5, 8);
+        const leaves2 = new THREE.Mesh(coneGeo2, matTreeLeaves);
+        leaves2.position.y = 2.8;
+        leaves2.castShadow = true;
+        group.add(leaves2);
+    }
+
+    scene.add(group);
+    return group;
+}
+
+function createPlayerMesh() {
+    const group = new THREE.Group();
+    
+    // 身體
+    const bodyGeo = new THREE.CylinderGeometry(1.0, 1.2, 1.8, 16);
+    const body = new THREE.Mesh(bodyGeo, matPlayer);
+    body.position.y = 0.9;
+    body.castShadow = true;
+    group.add(body);
+
+    // 頭
+    const headGeo = new THREE.SphereGeometry(1.5, 16, 16);
+    const head = new THREE.Mesh(headGeo, matPlayer);
+    head.position.y = 2.4;
+    head.castShadow = true;
+    group.add(head);
+
+    // 耳朵
+    const earGeo = new THREE.ConeGeometry(0.4, 0.8, 4);
+    const earL = new THREE.Mesh(earGeo, matPlayer);
+    earL.position.set(-0.8, 3.4, 0); earL.rotation.z = 0.4;
+    const earR = new THREE.Mesh(earGeo, matPlayer);
+    earR.position.set(0.8, 3.4, 0); earR.rotation.z = -0.4;
+    group.add(earL); group.add(earR);
+
+    // 臉
+    const eyeGeo = new THREE.SphereGeometry(0.15, 8, 8);
+    const matEye = new THREE.MeshBasicMaterial({color: 0x3E2723});
+    const eyeL = new THREE.Mesh(eyeGeo, matEye);
+    eyeL.position.set(-0.4, 2.5, 1.3);
+    const eyeR = new THREE.Mesh(eyeGeo, matEye);
+    eyeR.position.set(0.4, 2.5, 1.3);
+    group.add(eyeL); group.add(eyeR);
+
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshBasicMaterial({color: 0xD81B60}));
+    nose.position.set(0, 2.3, 1.4);
+    group.add(nose);
+
+    scene.add(group);
+    return group;
+}
+
+function createEnemyMesh(type) {
+    const group = new THREE.Group();
+    
+    if (type === 'slime') {
+        const geo = new THREE.SphereGeometry(1.3, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.6);
+        const mat = new THREE.MeshStandardMaterial({color: 0x42A5F5}); 
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.scale.y = 0.8;
+        group.add(mesh);
+
+        const eyeGeo = new THREE.SphereGeometry(0.3, 8, 8);
+        const matWhite = new THREE.MeshBasicMaterial({color: 0xFFFFFF});
+        const eyeL = new THREE.Mesh(eyeGeo, matWhite); eyeL.position.set(-0.5, 0.8, 1);
+        const eyeR = new THREE.Mesh(eyeGeo, matWhite); eyeR.position.set(0.5, 0.8, 1);
+        group.add(eyeL); group.add(eyeR);
+        
+        const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.12, 4, 4), new THREE.MeshBasicMaterial({color: 0x000000}));
+        const pL = pupil.clone(); pL.position.set(-0.5, 0.9, 1.25);
+        const pR = pupil.clone(); pR.position.set(0.5, 0.9, 1.25);
+        group.add(pL); group.add(pR);
+
+    } else { 
+        const body = new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 16), new THREE.MeshStandardMaterial({color: 0xFFEE58}));
+        body.position.y = 1.2;
+        group.add(body);
+        
+        const beak = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.5, 4), new THREE.MeshStandardMaterial({color: 0xFF7043}));
+        beak.rotation.x = Math.PI/2; beak.position.set(0, 1.2, 1.2);
+        group.add(beak);
+        
+        const comb = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshStandardMaterial({color: 0xEF5350}));
+        comb.position.set(0, 2.3, 0);
+        group.add(comb);
+
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.15, 4, 4), new THREE.MeshBasicMaterial({color: 0x000000}));
+        const eL = eye.clone(); eL.position.set(-0.4, 1.4, 1.0);
+        const eR = eye.clone(); eR.position.set(0.4, 1.4, 1.0);
+        group.add(eL); group.add(eR);
+    }
+    
+    group.castShadow = true;
+    scene.add(group);
+    return group;
+}
+
+function createBombMesh() {
+    const group = new THREE.Group();
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(1.1, 16, 16), matBomb);
+    ball.position.y = 1.1;
+    ball.castShadow = true;
+    group.add(ball);
+
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.3, 8), new THREE.MeshStandardMaterial({color: 0x616161}));
+    cap.position.y = 2.2;
+    group.add(cap);
+    
+    const fuse = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.7, 4), new THREE.MeshStandardMaterial({color: 0xFFAB00}));
+    fuse.position.y = 2.5;
+    group.add(fuse);
+    
+    scene.add(group);
+    return group;
+}
+
+function createItemMesh(type) {
+    const group = new THREE.Group();
+    const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 16), new THREE.MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.3}));
+    sphere.position.y = 1.5;
+    group.add(sphere);
+    
+    let color = 0xFFFFFF;
+    if (type === 'bomb') color = 0xEF9A9A;
+    if (type === 'fire') color = 0xFFCC80;
+    if (type === 'speed') color = 0x81D4FA;
+    if (type === 'kick') color = 0xA5D6A7;
+    
+    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.8), new THREE.MeshStandardMaterial({color: color, emissive: color, emissiveIntensity: 0.8}));
+    core.position.y = 1.5;
+    group.add(core);
+
+    scene.add(group);
+    return group;
+}
+
+function createExitMesh(r, c) {
+    const group = new THREE.Group();
+    const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(3, 3.5, 0.5), new THREE.MeshStandardMaterial({color: 0x4E342E}));
+    doorFrame.position.y = 1.75;
+    doorFrame.position.z = -1;
+    group.add(doorFrame);
+    
+    const doorLight = new THREE.Mesh(new THREE.PlaneGeometry(2, 3), new THREE.MeshBasicMaterial({color: 0x4FC3F7}));
+    doorLight.position.y = 1.75;
+    doorLight.position.z = -0.7;
+    group.add(doorLight);
+    
+    const wPos = logicToWorld(c * TILE_SIZE, r * TILE_SIZE);
+    group.position.set(wPos.x, 0, wPos.z);
+    
+    scene.add(group);
+    return group;
+}
+
+function createExplosionEffect(c, r, center) {
+    const group = new THREE.Group();
+    const wPos = logicToWorld(c * TILE_SIZE, r * TILE_SIZE);
+    group.position.set(wPos.x, 2, wPos.z);
+
+    const core = new THREE.Mesh(new THREE.BoxGeometry(3.5, 3.5, 3.5), matExplosionCore);
+    group.add(core);
+    
+    const outer = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), matExplosionOuter);
+    group.add(outer);
+
+    scene.add(group);
+    meshes.explosions.push({ mesh: group, life: 30, maxLife: 30 });
+}
+
+// --- 遊戲邏輯與狀態 ---
+
+let gameRunning = false;
+let map = [];
+let bombs = [];
+let items = [];
+let enemies = [];
+let exitPos = {x: 0, y: 0, revealed: false, mesh: null};
+
+const player = {
+    x: TILE_SIZE, y: TILE_SIZE, radius: TILE_SIZE * 0.4,
+    speed: 2.5, // 稍微加速，因為地圖變大了
+    dx: 0, dy: 0,
+    maxBombs: 1, bombRange: 1, hasKick: false, speedMulti: 1,
+    direction: 'down', dead: false, id: 'p1'
+};
+
+const keys = {};
+window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (e.code === 'Space' && gameRunning && !player.dead) placeBomb();
+});
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+let _idCounter = 0;
+function getUniqueId() { return _idCounter++; }
+
+function initMap() {
+    map = [];
+    meshes.walls = [];
+    let softBlocks = [];
+
+    for (let r = 0; r < ROWS; r++) {
+        const row = [];
+        const meshRow = [];
+        for (let c = 0; c < COLS; c++) {
+            let type = TYPES.FLOOR;
+            if (r === 0 || r === ROWS - 1 || c === 0 || c === COLS - 1) type = TYPES.WALL_HARD;
+            else if (r % 2 === 0 && c % 2 === 0) type = TYPES.WALL_HARD;
+            else if ((r === 1 && c === 1) || (r === 1 && c === 2) || (r === 2 && c === 1)) type = TYPES.FLOOR;
+            else if (Math.random() < 0.45) { // 稍微增加磚塊密度
+                type = TYPES.WALL_SOFT;
+                softBlocks.push({r, c});
+            }
+            
+            row.push(type);
+            
+            if (type !== TYPES.FLOOR) {
+                meshRow.push(createWallMesh(r, c, type));
+            } else {
+                meshRow.push(null);
+            }
+        }
+        map.push(row);
+        meshes.walls.push(meshRow);
+    }
+
+    if (softBlocks.length > 0) {
+        const exitIdx = Math.floor(Math.random() * softBlocks.length);
+        exitPos = { x: softBlocks[exitIdx].c, y: softBlocks[exitIdx].r, revealed: false, mesh: null };
+        softBlocks.splice(exitIdx, 1);
+    } else {
+        exitPos = { x: COLS-2, y: ROWS-2, revealed: false, mesh: null };
+    }
+
+    // 增加道具數量適應大地圖
+    const itemsToSpawn = [{type: 'bomb', count: 5}, {type: 'fire', count: 5}, {type: 'speed', count: 3}, {type: 'kick', count: 2}];
+    items = [];
+    itemsToSpawn.forEach(it => {
+        for(let i=0; i<it.count; i++) {
+            if (softBlocks.length > 0) {
+                const idx = Math.floor(Math.random() * softBlocks.length);
+                const pos = softBlocks[idx];
+                items.push({ id: getUniqueId(), x: pos.c, y: pos.r, type: it.type, hidden: true });
+                softBlocks.splice(idx, 1);
+            }
+        }
+    });
+
+    enemies = [];
+    let enemyCount = 5 + Math.floor(Math.random() * 3); // 增加敵人
+    let safeDist = 5;
+    while(enemies.length < enemyCount) {
+        let er = Math.floor(Math.random() * ROWS);
+        let ec = Math.floor(Math.random() * COLS);
+        // 遠離玩家出生點
+        if (map[er][ec] === TYPES.FLOOR && (er + ec > safeDist)) {
+            enemies.push({
+                id: getUniqueId(),
+                x: ec * TILE_SIZE + TILE_SIZE/2,
+                y: er * TILE_SIZE + TILE_SIZE/2,
+                r: er, c: ec,
+                dir: Math.floor(Math.random()*4),
+                speed: 1.2 + Math.random() * 0.5,
+                type: Math.random() > 0.5 ? 'slime' : 'chicken'
+            });
+        }
+    }
+}
+
+function clearScene() {
+    meshes.enemies.forEach(m => scene.remove(m)); meshes.enemies.clear();
+    meshes.bombs.forEach(m => scene.remove(m)); meshes.bombs.clear();
+    meshes.items.forEach(m => scene.remove(m)); meshes.items.clear();
+    meshes.explosions.forEach(o => scene.remove(o.mesh)); meshes.explosions = [];
+    
+    if(meshes.walls.length > 0) {
+        for(let r=0; r<ROWS; r++) {
+            for(let c=0; c<COLS; c++) {
+                if(meshes.walls[r][c]) scene.remove(meshes.walls[r][c]);
+            }
+        }
+    }
+    
+    if (meshes.player) { scene.remove(meshes.player); meshes.player = null; }
+    if (exitPos.mesh) { scene.remove(exitPos.mesh); exitPos.mesh = null; }
+    meshes.particles.forEach(p => scene.remove(p.mesh)); meshes.particles = [];
+}
+
+function resetGame() {
+    clearScene();
+    
+    bombs = [];
+    items = [];
+    
+    player.x = TILE_SIZE * 1.5; player.y = TILE_SIZE * 1.5;
+    player.maxBombs = 1; player.bombRange = 1; player.speedMulti = 1;
+    player.hasKick = false; player.dead = false;
+
+    initMap();
+    meshes.player = createPlayerMesh();
+
+    updateHUD();
+    gameRunning = true;
+    overlay.classList.add('hidden');
+    
+    playBGM();
+
+    if (!renderer.info.autoClear) animate(); 
+}
+
+// --- 邏輯輔助 ---
+function getTile(col, row) {
+    if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return TYPES.WALL_HARD;
+    return map[row][col];
+}
+function setTile(col, row, type) {
+    if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+        map[row][col] = type;
+        if (type === TYPES.FLOOR && meshes.walls[row][col]) {
+            scene.remove(meshes.walls[row][col]);
+            meshes.walls[row][col] = null;
+            createDebris(col, row);
+        }
+    }
+}
+function createDebris(c, r) {
+    const wPos = logicToWorld(c * TILE_SIZE, r * TILE_SIZE);
+    for(let i=0; i<6; i++) {
+        const geo = new THREE.DodecahedronGeometry(0.5);
+        const mat = new THREE.MeshBasicMaterial({color: 0x66BB6A});
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(wPos.x, 2.5, wPos.z);
+        const velocity = {
+            x: (Math.random() - 0.5) * 0.8,
+            y: Math.random() * 0.5,
+            z: (Math.random() - 0.5) * 0.8
+        };
+        scene.add(mesh);
+        meshes.particles.push({mesh, velocity, life: 40});
+    }
+}
+
+function toGrid(px) { return Math.floor(px / TILE_SIZE); }
+function snapCenter(val) { return Math.floor(val / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2; }
+
+function checkCollision(x, y) {
+    let r = player.radius - 2;
+    let points = [
+        {c: toGrid(x-r), r: toGrid(y-r)}, {c: toGrid(x+r), r: toGrid(y-r)},
+        {c: toGrid(x-r), r: toGrid(y+r)}, {c: toGrid(x+r), r: toGrid(y+r)}
+    ];
+    let currPoints = [
+        {c: toGrid(player.x-r), r: toGrid(player.y-r)}, {c: toGrid(player.x+r), r: toGrid(player.y-r)},
+        {c: toGrid(player.x-r), r: toGrid(player.y+r)}, {c: toGrid(player.x+r), r: toGrid(player.y+r)}
+    ];
+
+    for(let p of points) {
+        if (getTile(p.c, p.r) !== TYPES.FLOOR) return true;
+        let bomb = bombs.find(b => b.c === p.c && b.r === p.r);
+        if (bomb) {
+             let isInside = currPoints.some(cp => cp.c === bomb.c && cp.r === bomb.r);
+             if (!isInside) return true;
+        }
+    }
+    return false;
+}
+
+function placeBomb() {
+    let pc = toGrid(player.x); let pr = toGrid(player.y);
+    let activeBombs = bombs.filter(b => b.owner === 'player').length;
+    if (activeBombs >= player.maxBombs) return;
+    if (bombs.some(b => b.c === pc && b.r === pr)) return;
+
+    const id = getUniqueId();
+    // 修改：炸彈時間設為 240 (60fps * 4秒)
+    bombs.push({
+        id: id, r: pr, c: pc, timer: 240, range: player.bombRange,
+        owner: 'player', slidingX: 0, slidingY: 0
+    });
+    
+    const mesh = createBombMesh();
+    const wPos = logicToWorld(pc * TILE_SIZE, pr * TILE_SIZE);
+    mesh.position.set(wPos.x, 0, wPos.z);
+    meshes.bombs.set(id, mesh);
+    playSound('plant');
+}
+
+function explodeBomb(bomb) {
+    let centerC = bomb.c; let centerR = bomb.r; let range = bomb.range;
+    bombs = bombs.filter(b => b !== bomb);
+    if (meshes.bombs.has(bomb.id)) {
+        scene.remove(meshes.bombs.get(bomb.id)); meshes.bombs.delete(bomb.id);
+    }
+    playSound('explode');
+    createExplosionEffect(centerC, centerR, true);
+
+    const dirs = [{dx:0, dy:-1}, {dx:0, dy:1}, {dx:-1, dy:0}, {dx:1, dy:0}];
+    dirs.forEach(d => {
+        for(let i=1; i<=range; i++) {
+            let nc = centerC + d.dx * i; let nr = centerR + d.dy * i;
+            let type = getTile(nc, nr);
+            if (type === TYPES.WALL_HARD) break;
+            createExplosionEffect(nc, nr, false);
+            if (toGrid(player.x) === nc && toGrid(player.y) === nr) gameOver();
+            if (toGrid(player.x) === centerC && toGrid(player.y) === centerR) gameOver();
+
+            if (type === TYPES.WALL_SOFT) {
+                setTile(nc, nr, TYPES.FLOOR);
+                items.forEach(it => { if (it.x === nc && it.y === nr) it.hidden = false; });
+                if (exitPos.x === nc && exitPos.y === nr) exitPos.revealed = true;
+                break;
+            }
+            let otherBomb = bombs.find(b => b.c === nc && b.r === nr);
+            if (otherBomb) otherBomb.timer = 1;
+        }
+    });
+}
+
+function updateHUD() {
+    hudBomb.textContent = player.maxBombs;
+    hudPower.textContent = player.bombRange;
+    hudSpeed.textContent = Math.floor(player.speedMulti * 10) / 10;
+    hudEnemies.textContent = enemies.length;
+}
+
+function gameOver() {
+    gameRunning = false; player.dead = true;
+    if (meshes.player) {
+        meshes.player.rotation.z = Math.PI / 2; meshes.player.position.y = 0.5;
+    }
+    playSound('die');
+    if(bgmInterval) clearInterval(bgmInterval);
+    overlayTitle.textContent = "GAME OVER"; overlayTitle.style.color = "#D32F2F";
+    overlaySub.textContent = "Oops! The forest is dangerous!";
+    startBtn.textContent = "TRY AGAIN"; overlay.classList.remove('hidden');
+}
+
+function gameWin() {
+    gameRunning = false; playSound('win');
+    if(bgmInterval) clearInterval(bgmInterval);
+    overlayTitle.textContent = "YOU WIN!"; overlayTitle.style.color = "#388E3C";
+    overlaySub.textContent = "The forest is safe now!";
+    startBtn.textContent = "PLAY AGAIN"; overlay.classList.remove('hidden');
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    if (gameRunning && !player.dead) {
+        player.dx = 0; player.dy = 0;
+        let speed = player.speed * player.speedMulti;
+        if (keys['ArrowUp']) { player.dy = -speed; player.direction = 'up'; }
+        if (keys['ArrowDown']) { player.dy = speed; player.direction = 'down'; }
+        if (keys['ArrowLeft']) { player.dx = -speed; player.direction = 'left'; }
+        if (keys['ArrowRight']) { player.dx = speed; player.direction = 'right'; }
+
+        if (player.dx !== 0) {
+            let newX = player.x + player.dx;
+            if (!checkCollision(newX, player.y)) player.x = newX;
+            else {
+                let gridY = toGrid(player.y);
+                let snapY = gridY * TILE_SIZE + TILE_SIZE/2;
+                if (Math.abs(player.y - snapY) < TILE_SIZE/3) { if (player.y < snapY) player.y++; else player.y--; }
+            }
+        }
+        if (player.dy !== 0) {
+            let newY = player.y + player.dy;
+            if (!checkCollision(player.x, newY)) player.y = newY;
+            else {
+                let gridX = toGrid(player.x);
+                let snapX = gridX * TILE_SIZE + TILE_SIZE/2;
+                if (Math.abs(player.x - snapX) < TILE_SIZE/3) { if (player.x < snapX) player.x++; else player.x--; }
+            }
+        }
+
+        if (meshes.player) {
+            const wPos = logicToWorld(player.x, player.y);
+            meshes.player.position.x = wPos.x; 
+            meshes.player.position.z = wPos.z;
+            
+            // --- 鏡頭跟隨邏輯 (重要) ---
+            // 讓鏡頭平滑跟隨玩家，保持固定的 Y 高度與 Z 軸偏移
+            // 這裡設定鏡頭在玩家上方 30 單位，後方 25 單位
+            const targetX = wPos.x;
+            const targetZ = wPos.z + 25; 
+            const targetY = 30;
+
+            camera.position.x += (targetX - camera.position.x) * 0.1;
+            camera.position.z += (targetZ - camera.position.z) * 0.1;
+            camera.position.y += (targetY - camera.position.y) * 0.1;
+            camera.lookAt(camera.position.x, 0, camera.position.z - 30);
+
+            if (player.direction === 'up') meshes.player.rotation.y = Math.PI;
+            if (player.direction === 'down') meshes.player.rotation.y = 0;
+            if (player.direction === 'left') meshes.player.rotation.y = -Math.PI/2;
+            if (player.direction === 'right') meshes.player.rotation.y = Math.PI/2;
+            if (player.dx !== 0 || player.dy !== 0) meshes.player.position.y = 0.9 + Math.sin(Date.now() / 100) * 0.2;
+            else meshes.player.position.y = 0.9;
+        }
+
+        let pc = toGrid(player.x); let pr = toGrid(player.y);
+        let itemIdx = items.findIndex(it => !it.hidden && it.x === pc && it.y === pr);
+        if (itemIdx !== -1) {
+            let it = items[itemIdx]; items.splice(itemIdx, 1);
+            if (meshes.items.has(it.id)) { scene.remove(meshes.items.get(it.id)); meshes.items.delete(it.id); }
+            playSound('item');
+            if (it.type === 'bomb') player.maxBombs++;
+            if (it.type === 'fire') player.bombRange++;
+            if (it.type === 'speed') player.speedMulti = Math.min(player.speedMulti + 0.3, 2.0);
+            if (it.type === 'kick') player.hasKick = true;
+            updateHUD();
+        }
+
+        if (player.hasKick) {
+            bombs.forEach(b => {
+                if (b.slidingX === 0 && b.slidingY === 0) {
+                    let dist = Math.hypot(player.x - (b.c * TILE_SIZE + TILE_SIZE/2), player.y - (b.r * TILE_SIZE + TILE_SIZE/2));
+                    if (dist < TILE_SIZE * 0.8) {
+                        if (keys['ArrowRight'] && player.dx > 0 && player.x < (b.c*TILE_SIZE)) b.slidingX = 1;
+                        else if (keys['ArrowLeft'] && player.dx < 0 && player.x > (b.c*TILE_SIZE + TILE_SIZE)) b.slidingX = -1;
+                        else if (keys['ArrowDown'] && player.dy > 0 && player.y < (b.r*TILE_SIZE)) b.slidingY = 1;
+                        else if (keys['ArrowUp'] && player.dy < 0 && player.y > (b.r*TILE_SIZE + TILE_SIZE)) b.slidingY = -1;
+                    }
+                }
+            });
+        }
+
+        for (let i = bombs.length - 1; i >= 0; i--) {
+            let b = bombs[i];
+            if (b.slidingX !== 0 || b.slidingY !== 0) {
+                if (!b.slideCounter) b.slideCounter = 0;
+                b.slideCounter++;
+                if (b.slideCounter > 4) {
+                    let nc = b.c + b.slidingX; let nr = b.r + b.slidingY;
+                    let nextTile = getTile(nc, nr);
+                    let hasBomb = bombs.some(obs => obs.c === nc && obs.r === nr);
+                    let hasEnemy = enemies.some(e => e.c === nc && e.r === nr);
+                    if (nextTile === TYPES.FLOOR && !hasBomb && !hasEnemy) { b.c = nc; b.r = nr; }
+                    else { b.slidingX = 0; b.slidingY = 0; }
+                    b.slideCounter = 0;
+                }
+            }
+            if (meshes.bombs.has(b.id)) {
+                const mesh = meshes.bombs.get(b.id);
+                const wPos = logicToWorld(b.c * TILE_SIZE, b.r * TILE_SIZE);
+                mesh.position.x += (wPos.x - mesh.position.x) * 0.5;
+                mesh.position.z += (wPos.z - mesh.position.z) * 0.5;
+                let scale = 1 + Math.sin(Date.now() / 100) * 0.1;
+                mesh.scale.set(scale, scale, scale);
+            }
+            b.timer--;
+            if (b.timer <= 0) explodeBomb(b);
+        }
+
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let e = enemies[i];
+            if (!meshes.enemies.has(e.id)) meshes.enemies.set(e.id, createEnemyMesh(e.type));
+            let dirs = [[0,-1], [0,1], [-1,0], [1,0]];
+            let move = dirs[e.dir];
+            let newX = e.x + move[0] * e.speed; let newY = e.y + move[1] * e.speed;
+            let cr = toGrid(newY), cc = toGrid(newX);
+            let tile = getTile(cc, cr);
+            let hitBomb = bombs.some(b => b.c === cc && b.r === cr);
+            if (tile !== TYPES.FLOOR || hitBomb) { e.dir = Math.floor(Math.random() * 4); }
+            else {
+                if (e.dir < 2) { e.x = snapCenter(e.x); e.y = newY; }
+                else { e.x = newX; e.y = snapCenter(e.y); }
+                e.c = toGrid(e.x); e.r = toGrid(e.y);
+            }
+            if (Math.hypot(e.x - player.x, e.y - player.y) < TILE_SIZE * 0.8) gameOver();
+            const mesh = meshes.enemies.get(e.id);
+            if (mesh) {
+                const wPos = logicToWorld(e.x, e.y); 
+                mesh.position.x = (e.x / TILE_SIZE) * UNIT_SIZE + MAP_OFFSET_X;
+                mesh.position.z = (e.y / TILE_SIZE) * UNIT_SIZE + MAP_OFFSET_Z;
+                mesh.position.y = Math.abs(Math.sin(Date.now() / 150)) * 0.5;
+                if (e.dir === 2) mesh.rotation.y = -Math.PI/2;
+                if (e.dir === 3) mesh.rotation.y = Math.PI/2;
+            }
+            let hitExplosion = false;
+            meshes.explosions.forEach(exObj => {
+               if (Math.abs(exObj.mesh.position.x - mesh.position.x) < 2 && Math.abs(exObj.mesh.position.z - mesh.position.z) < 2) hitExplosion = true;
+            });
+            if (hitExplosion) { enemies.splice(i, 1); scene.remove(mesh); meshes.enemies.delete(e.id); updateHUD(); }
+        }
+
+        for (let i = meshes.explosions.length - 1; i >= 0; i--) {
+            let ex = meshes.explosions[i];
+            ex.life--;
+            ex.mesh.scale.setScalar(1 + (30-ex.life)/10);
+            ex.mesh.children.forEach(c => { if(c.material.transparent) c.material.opacity = ex.life / 30; });
+            if (ex.life <= 0) { scene.remove(ex.mesh); meshes.explosions.splice(i, 1); }
+        }
+
+        if (exitPos.revealed && !exitPos.mesh) exitPos.mesh = createExitMesh(exitPos.y, exitPos.x);
+        items.forEach(it => {
+            if (!it.hidden && !meshes.items.has(it.id)) {
+                meshes.items.set(it.id, createItemMesh(it.type));
+                const m = meshes.items.get(it.id);
+                const wPos = logicToWorld(it.x * TILE_SIZE, it.y * TILE_SIZE);
+                m.position.set(wPos.x, 0, wPos.z);
+            }
+        });
+        meshes.items.forEach(m => { m.rotation.y += 0.05; m.position.y = 1.5 + Math.sin(Date.now() / 200) * 0.3; });
+
+        for(let i=meshes.particles.length-1; i>=0; i--) {
+            let p = meshes.particles[i];
+            p.mesh.position.x += p.velocity.x; p.mesh.position.y += p.velocity.y; p.mesh.position.z += p.velocity.z;
+            p.velocity.y -= 0.02;
+            if(p.mesh.position.y < 0) p.velocity.y = -p.velocity.y * 0.5;
+            p.life--;
+            if(p.life <= 0) { scene.remove(p.mesh); meshes.particles.splice(i, 1); }
+        }
+
+        if (enemies.length === 0 && exitPos.revealed) {
+            const wPos = logicToWorld(player.x, player.y);
+            const exitWPos = logicToWorld(exitPos.x * TILE_SIZE, exitPos.y * TILE_SIZE);
+            if (Math.abs(wPos.x - exitWPos.x) < 2 && Math.abs(wPos.z - exitWPos.z) < 2) gameWin();
+        }
+    }
+
+    renderer.render(scene, camera);
+}
+
+initThree();
+startBtn.addEventListener('click', () => {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    resetGame();
+});
+
+let angle = 0;
+function introLoop() {
+    if (!gameRunning) {
+        angle += 0.005;
+        camera.position.x = Math.sin(angle) * 45;
+        camera.position.z = Math.cos(angle) * 45;
+        camera.lookAt(0, 0, 0);
+        renderer.render(scene, camera);
+        requestAnimationFrame(introLoop);
+    }
+}
+introLoop();
+
+</script>
+</body>
+</html>
